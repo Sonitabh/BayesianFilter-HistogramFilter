@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb  7 16:50:47 2020
+
+@author: sonit
+"""
+
 import numpy as np
 
 
@@ -26,30 +33,28 @@ class HistogramFilter(object):
         self.actions = actions
         self.observations = observations
         
-        if np.isscalar(self.observations):
+        if np.isscalar(actions):
             n = 1
         else:
-            n = len(self.observations)
+            n = len(self.actions)
         
         self.max_idxs = []
         
         for i in range(0,n):
             
             if n == 1:
-                act0 = self.actions[0]
-                act1 = self.actions[1]
+                act = self.actions
                 obs = self.observations
             else:
-                act0 = self.actions[i][0]
-                act1 = self.actions[i][1]
+                act = self.actions[i]
                 obs = self.observations[i]
             
-            if act0 != 0:
+            if self.actions[i][0] != 0:
                 ax = 0
-                shift = act0
-            elif act1 != 0:
+                shift = self.actions[i][0] 
+            elif self.actions[i][1] != 0:
                 ax = 1
-                shift = act1
+                shift = self.actions[i][1]
             
             T1 = np.roll(self.belief, shift, axis=ax)
             T2 = self.belief*1
@@ -70,14 +75,18 @@ class HistogramFilter(object):
                 
             belief_act = 0.1*self.belief + 0.9*T1 + (1-0.1)*T2
             
+            if len(self.observations) == 1:
+                obs = self.observations
+            else:
+                obs = self.observations[i]
+            
             M_obs = np.where(self.cmap == obs, 0.9, 0.1)
+            #M_obs = np.where(self.cmap == self.observations[i], 0.9, 0.1)
             
             belief_next = belief_act*M_obs
             belief_next = belief_next/np.sum(belief_next)
             self.belief = belief_next
             max_idx = np.unravel_index(np.argmax(self.belief), self.belief.shape)
             self.max_idxs.append(max_idx)
-        
-        self.belief = np.rot90(self.belief,1)
             
         return np.array(self.max_idxs[-1]) , self.belief
